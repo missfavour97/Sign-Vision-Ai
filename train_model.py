@@ -27,11 +27,11 @@ for filename in all_files:
     # Read CSV without assuming header structure
     df = pd.read_csv(filename, header=None)
 
-    # Convert everything possible to numbers, turning non-numeric strings (like image paths) into NaN
+    # Convert everything possible to numbers, turning text strings into NaN
     numeric_df = df.apply(pd.to_numeric, errors='coerce')
     
-    # Drop rows that couldn't be converted or contain NaNs
-    numeric_df = numeric_df.dropna()
+    # Drop columns that are entirely text/NaN (like the image path column)
+    numeric_df = numeric_df.dropna(axis=1, how='all')
 
     if numeric_df.empty:
         continue
