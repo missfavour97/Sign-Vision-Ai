@@ -47,24 +47,28 @@ while cap.isOpened():
                 frame, hand_landmarks, mp_hands.HAND_CONNECTIONS
             )
 
-            # Extract 21 (x, y) coordinates and flatten them into a 1D array
+            # Extract 21 (x, y, z) coordinates to match the 63features the model was trained on
             landmarks = []
             for lm in hand_landmarks.landmark:
-                landmarks.extend([lm.x, lm.y])
+                landmarks.extend([lm.x, lm.y, lm.z])
 
             # Reshape for the model prediction
             features = np.array(landmarks).reshape(1, -1)
 
-            # Predict the sign digit
-            prediction = model.predict(features)[0]
-            confidence_score = np.max(model.predict_proba(features))
+            try:
 
-            # Display prediction text on screen
-            text = f"Sign: {prediction} ({confidence_score * 100:.1f}%)"
-            cv2.putText(
-                frame, text, (50, 50),
-                cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2, cv2.LINE_AA
-            )
+                 # Predict the sign digit
+                 prediction = model.predict(features)[0]
+                 confidence_score = np.max(model.predict_proba(features))
+
+                 # Display prediction text on screen
+                 text = f"Sign: {prediction} ({confidence_score * 100:.1f}%)"
+                 cv2.putText(
+                     frame, text, (50, 50),
+                      cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2, cv2.LINE_AA
+                ) 
+            except Exception as e:
+                print(f"Error during prediction: {e}")
 
     # Show the live feed window
     cv2.imshow('Sign Language Translator', frame)
