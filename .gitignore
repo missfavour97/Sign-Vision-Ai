@@ -1,1 +1,4 @@
 venv/
+dataset/
+*.pkl
+.DS_Store
