@@ -1,0 +1,72 @@
+import cv2
+import mediapipe as mp
+import numpy as np
+import joblib
+
+# 1. Load your trained model
+model = joblib.load('sign_language_model.pkl')
+
+# 2. Initialize MediaPipe Hands
+mp_hands = mp.solutions.hands
+mp_drawing = mp.solutions.drawing_utils
+hands = mp_hands.Hands(
+    static_image_mode=False,
+    max_num_hands=1,
+    min_detection_confidence=0.7,
+    min_tracking_confidence=0.7
+)
+
+# 3. Open Webcam
+cap = cv2.VideoCapture(0)
+
+print("Starting webcam... Press 'q' to exit.")
+
+while cap.isOpened():
+    success, frame = cap.read()
+    if not success:
+        print("Ignoring empty camera frame.")
+        continue
+
+    # Flip the frame horizontally for a selfie-view display, and convert BGR to RGB
+    frame = cv2.flip(frame, 1)
+    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+    # Process hand landmarks
+    result = hands.process(rgb_frame)
+
+    if result.multi_hand_landmarks:
+        for hand_landmarks in result.multi_hand_landmarks:
+            # Draw hand landmarks on the video frame
+            mp_drawing.draw_landmarks(
+                frame, hand_landmarks, mp_hands.HAND_CONNECTIONS
+            )
+
+            # Extract 21 (x, y) coordinates and flatten them into a 1D array (42 features)
+            landmarks = []
+            for lm in hand_landmarks.landmark:
+                landmarks.extend([lm.x, lm.y])
+
+            # Reshape for the model prediction
+            features = np.array(landmarks).reshape(1, -1)
+
+            # Predict the sign digit
+            prediction = model.predict(features)[0]
+            confidence_score = np.max(model.predict_proba(features))
+
+            # Display prediction text on screen
+            text = f"Sign: {prediction} ({confidence_score * 100:.1f}%)"
+            cv2.putText(
+                frame, text, (50, 50),
+                cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2, cv2.LINE_AA
+            )
+
+    # Show the live feed window
+    cv2.imshow('Sign Language Translator', frame)
+
+    # Break loop when 'q' key is pressed
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+# Release resources
+cap.release()
+cv2.destroyAllWindows()
