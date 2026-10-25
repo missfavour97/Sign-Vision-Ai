@@ -3,12 +3,18 @@ import mediapipe as mp
 import numpy as np
 import joblib
 
+# Force load MediaPipe solutions correctly
+try:
+    mp_hands = mp.solutions.hands
+    mp_drawing = mp.solutions.drawing_utils
+except AttributeError:
+    import mediapipe.python.solutions as mp_solutions
+    mp_hands = mp_solutions.hands
+    mp_drawing = mp_solutions.drawing_utils
+
 # 1. Load your trained model
 model = joblib.load('sign_language_model.pkl')
 
-# 2. Initialize MediaPipe Hands
-mp_hands = mp.solutions.hands
-mp_drawing = mp.solutions.drawing_utils
 hands = mp_hands.Hands(
     static_image_mode=False,
     max_num_hands=1,
@@ -16,7 +22,7 @@ hands = mp_hands.Hands(
     min_tracking_confidence=0.7
 )
 
-# 3. Open Webcam
+# 2. Open Webcam
 cap = cv2.VideoCapture(0)
 
 print("Starting webcam... Press 'q' to exit.")
@@ -41,7 +47,7 @@ while cap.isOpened():
                 frame, hand_landmarks, mp_hands.HAND_CONNECTIONS
             )
 
-            # Extract 21 (x, y) coordinates and flatten them into a 1D array (42 features)
+            # Extract 21 (x, y) coordinates and flatten them into a 1D array
             landmarks = []
             for lm in hand_landmarks.landmark:
                 landmarks.extend([lm.x, lm.y])
